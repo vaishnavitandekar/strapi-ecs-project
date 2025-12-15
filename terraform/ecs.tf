@@ -1,35 +1,19 @@
 resource "aws_ecs_cluster" "this" {
-  name = "strapi-cluster"
-}
-
-resource "aws_iam_role" "ecs_task_execution" {
-  name = "ecsTaskExecutionRole-strapibackend"
-  assume_role_policy = jsonencode({
-    Version = "2012-10-17"
-    Statement = [{
-      Effect = "Allow"
-      Principal = { Service = "ecs-tasks.amazonaws.com" }
-      Action = "sts:AssumeRole"
-    }]
-  })
-}
-
-resource "aws_iam_role_policy_attachment" "ecs_policy" {
-  role       = aws_iam_role.ecs_task_execution.name
-  policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy"
+  name = "strapi-backend-cluster"
 }
 
 resource "aws_ecs_task_definition" "strapi" {
-  family                   = "strapi"
+  family                   = "strapi-backend-task"
   requires_compatibilities = ["FARGATE"]
   network_mode             = "awsvpc"
   cpu                      = 512
   memory                   = 1024
-  execution_role_arn       = aws_iam_role.ecs_task_execution.arn
+
+  execution_role_arn = var.existing_execution_role_arn
 
   container_definitions = jsonencode([
     {
-      name  = "strapi"
+      name  = "strapi-backend"
       image = "${var.ecr_repo}:${var.image_tag}"
       portMappings = [{ containerPort = 1337 }]
     }
@@ -37,7 +21,7 @@ resource "aws_ecs_task_definition" "strapi" {
 }
 
 resource "aws_ecs_service" "strapi" {
-  name            = "strapi-service"
+  name            = "strapi-backend-service"
   cluster         = aws_ecs_cluster.this.id
   task_definition = aws_ecs_task_definition.strapi.arn
   desired_count   = 1
