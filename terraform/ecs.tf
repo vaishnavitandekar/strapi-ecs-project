@@ -15,7 +15,27 @@ resource "aws_ecs_task_definition" "strapi" {
     {
       name  = "strapi-backend"
       image = "${var.ecr_repo}:${var.image_tag}"
-      portMappings = [{ containerPort = 1337 }]
+
+      portMappings = [
+        { containerPort = 1337 }
+      ]
+
+      essential = true
+
+      environment = [
+        { name = "NODE_ENV", value = "production" },
+        { name = "HOST", value = "0.0.0.0" },
+        { name = "PORT", value = "1337" }
+      ]
+
+      logConfiguration = {
+        logDriver = "awslogs"
+        options = {
+          awslogs-group         = "/ecs/strapi-backend"
+          awslogs-region        = "us-east-1"
+          awslogs-stream-prefix = "ecs"
+        }
+      }
     }
   ])
 }
@@ -33,8 +53,7 @@ resource "aws_ecs_service" "strapi" {
       "subnet-0fa63b900995738f6"
     ]
 
-    security_groups = ["sg-009961e820fd3b943"]
+    security_groups  = ["sg-009961e820fd3b943"]
     assign_public_ip = true
   }
 }
-
